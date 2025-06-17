@@ -56,28 +56,23 @@ bot.onText(/\/set_signature (.+)/, (msg, match) => {
 });
 
 // Automatically edit posts to add the signature
-bot.on("message", (msg) => {
-  const userId = msg.chat.id;
+bot.on("channel_post", async (msg) => {
+  const chatId = msg.chat.id;
+  const signature = channelSignatures[chatId];
 
-  if (awaitingChannelId[userId]) {
-    let channelId = msg.text; // User inputted channel ID
+  console.log(`Checking signature for ${chatId}:`, signature);
 
-    // Ensure the channel ID is correctly formatted
-    if (!channelId.startsWith("-100")) {
-      channelId = `-100${channelId}`;
+  if (signature && msg.text) {
+    try {
+      // Delete the original post
+      await bot.deleteMessage(chatId, msg.message_id);
+
+      // Repost the message with the signature
+      const updatedText = `${msg.text} — ${signature}`;
+      await bot.sendMessage(chatId, updatedText);
+    } catch (error) {
+      console.error("Error modifying message:", error);
     }
-
-    const signature = awaitingChannelId[userId];
-
-    // Save the corrected channel ID with the signature
-    channelSignatures[channelId] = signature;
-    saveSignatures(); // Persist data
-
-    bot.sendMessage(
-      userId,
-      `✅ Signature "${signature}" has been set for channel ${channelId}.`
-    );
-    delete awaitingChannelId[userId]; // Cleanup temporary storage
   }
 });
 
