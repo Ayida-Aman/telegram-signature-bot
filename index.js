@@ -32,7 +32,6 @@ app.post(`/webhook/${process.env.BOT_TOKEN}`, (req, res) => {
 const WEBHOOK_URL = `https://telegram-signature-bot-1.onrender.com/webhook/${process.env.BOT_TOKEN}`;
 bot.setWebHook(WEBHOOK_URL);
 
-// 🎉 New: Respond to /start with guidance
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
   const welcomeMessage = `
@@ -52,7 +51,6 @@ For example:
   bot.sendMessage(chatId, welcomeMessage);
 });
 
-// Command to set a signature
 bot.onText(/\/set_signature (.+)/, (msg, match) => {
   const userId = msg.chat.id;
   const signature = match[1];
@@ -64,7 +62,6 @@ bot.onText(/\/set_signature (.+)/, (msg, match) => {
   );
 });
 
-// Handle channel ID response
 bot.on("message", (msg) => {
   const userId = msg.chat.id;
 
@@ -88,7 +85,6 @@ bot.on("message", (msg) => {
   }
 });
 
-// Handle posts in the channel
 bot.on("channel_post", async (msg) => {
   const chatId = msg.chat.id;
   const signature = channelSignatures[chatId];
