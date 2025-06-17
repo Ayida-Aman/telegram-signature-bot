@@ -87,6 +87,7 @@ bot.on("message", (msg) => {
 
 bot.on("channel_post", async (msg) => {
   const chatId = msg.chat.id;
+  const messageId = msg.message_id;
   const signature = channelSignatures[chatId];
 
   console.log(`Checking signature for ${chatId}:`, signature);
@@ -94,31 +95,39 @@ bot.on("channel_post", async (msg) => {
   if (signature) {
     try {
       if (msg.text) {
-        // Handle text messages
         const updatedText = `${msg.text}\n\n${signature}`;
         await bot.editMessageText(updatedText, {
           chat_id: chatId,
-          message_id: msg.message_id,
+          message_id: messageId,
         });
-      } else if (msg.caption) {
-        // Handle media messages with captions
+        console.log(`Edited text message ${messageId} in ${chatId}`);
+      } else if (msg.caption && (msg.photo || msg.video || msg.document)) {
         const updatedCaption = `${msg.caption}\n\n${signature}`;
         await bot.editMessageCaption({
           chat_id: chatId,
-          message_id: msg.message_id,
+          message_id: messageId,
           caption: updatedCaption,
         });
+        console.log(`Edited caption for message ${messageId} in ${chatId}`);
+      } else {
+        console.log(
+          `No text or caption to edit for message ${messageId} in ${chatId}`
+        );
       }
     } catch (error) {
       console.error(
-        "❌ Error editing message or caption:",
+        `❌ Error editing message ${messageId} in ${chatId}:`,
         error.response?.body?.description || error.message
       );
-      bot.sendMessage(
+      await bot.sendMessage(
         chatId,
-        `⚠️ Could not edit message to add signature: ${error.message}`
+        `⚠️ Could not edit message to add signature: ${
+          error.response?.body?.description || error.message
+        }`
       );
     }
+  } else {
+    console.log(`No signature found for channel ${chatId}`);
   }
 });
 
