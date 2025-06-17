@@ -38,36 +38,40 @@ app.post(`/webhook/${process.env.BOT_TOKEN}`, (req, res) => {
 const WEBHOOK_URL = `https://telegram-signature-bot-1.onrender.com/webhook/${process.env.BOT_TOKEN}`;
 bot.setWebHook(WEBHOOK_URL);
 
+// Track ongoing signature setups
+let awaitingChannelId = {};
+
 // Command to set a signature
 bot.onText(/\/set_signature (.+)/, (msg, match) => {
-  const chatId = msg.sender_chat ? msg.sender_chat.id : msg.chat.id;
+  const userId = msg.chat.id;
   const signature = match[1];
 
-  channelSignatures[chatId] = signature;
-  saveSignatures(); // Save to file
+  // Store signature temporarily until the user provides a channel ID
+  awaitingChannelId[userId] = signature;
 
-  console.log("Updated Signatures:", channelSignatures);
-  bot.sendMessage(chatId, `✅ Signature updated: "${signature}"`);
+  bot.sendMessage(
+    userId,
+    "Please provide the channel ID where this signature should be set."
+  );
 });
 
 // Automatically edit posts to add the signature
-bot.on("channel_post", async (msg) => {
-  const chatId = msg.chat.id;
-  const signature = channelSignatures[chatId];
+bot.on("message", (msg) => {
+  const userId = msg.chat.id;
 
-  console.log(`Checking signature for ${chatId}:`, signature);
+  if (awaitingChannelId[userId]) {
+    const channelId = msg.text; // User inputted channel ID
+    const signature = awaitingChannelId[userId];
 
-  if (signature && msg.text) {
-    try {
-      // Delete the original message
-      await bot.deleteMessage(chatId, msg.message_id);
+    // Save the signature for the specified channel
+    channelSignatures[channelId] = signature;
+    saveSignatures(); // Persist data
 
-      // Repost the message with the signature
-      const updatedText = `${msg.text} — ${signature}`;
-      await bot.sendMessage(chatId, updatedText);
-    } catch (error) {
-      console.error("Error modifying message:", error);
-    }
+    bot.sendMessage(
+      userId,
+      `✅ Signature "${signature}" has been set for channel ${channelId}.`
+    );
+    delete awaitingChannelId[userId]; // Cleanup temporary storage
   }
 });
 
