@@ -91,17 +91,32 @@ bot.on("channel_post", async (msg) => {
 
   console.log(`Checking signature for ${chatId}:`, signature);
 
-  if (signature && msg.text) {
+  if (signature) {
     try {
-      await bot.deleteMessage(chatId, msg.message_id);
-
-      // ✨ New: Add a blank line before the signature
-      const updatedText = `${msg.text}\n\n${signature}`;
-      await bot.sendMessage(chatId, updatedText);
+      if (msg.text) {
+        // Handle text messages
+        const updatedText = `${msg.text}\n\n${signature}`;
+        await bot.editMessageText(updatedText, {
+          chat_id: chatId,
+          message_id: msg.message_id,
+        });
+      } else if (msg.caption) {
+        // Handle media messages with captions
+        const updatedCaption = `${msg.caption}\n\n${signature}`;
+        await bot.editMessageCaption({
+          chat_id: chatId,
+          message_id: msg.message_id,
+          caption: updatedCaption,
+        });
+      }
     } catch (error) {
       console.error(
-        "❌ Error modifying message:",
-        error.response?.body || error.message
+        "❌ Error editing message or caption:",
+        error.response?.body?.description || error.message
+      );
+      bot.sendMessage(
+        chatId,
+        `⚠️ Could not edit message to add signature: ${error.message}`
       );
     }
   }
