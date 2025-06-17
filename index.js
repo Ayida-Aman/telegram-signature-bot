@@ -58,11 +58,16 @@ bot.on("message", async (msg) => {
   console.log(`Checking signature for ${chatId}:`, signature);
 
   if (signature && msg.text) {
-    const updatedText = `${msg.text} — ${signature}`;
-    await bot.editMessageText(updatedText, {
-      chat_id: chatId,
-      message_id: msg.message_id,
-    });
+    try {
+      // Delete the original message
+      await bot.deleteMessage(chatId, msg.message_id);
+
+      // Repost the message with the signature
+      const updatedText = `${msg.text} — ${signature}`;
+      await bot.sendMessage(chatId, updatedText);
+    } catch (error) {
+      console.error("Error modifying message:", error);
+    }
   }
 });
 
