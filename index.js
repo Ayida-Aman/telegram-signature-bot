@@ -51,8 +51,8 @@ bot.onText(/\/set_signature (.+)/, (msg, match) => {
 });
 
 // Automatically edit posts to add the signature
-bot.on("message", async (msg) => {
-  const chatId = msg.sender_chat ? msg.sender_chat.id : msg.chat.id;
+bot.on("channel_post", async (msg) => {
+  const chatId = msg.chat.id;
   const signature = channelSignatures[chatId];
 
   console.log(`Checking signature for ${chatId}:`, signature);
