@@ -91,17 +91,24 @@ bot.on("channel_post", async (msg) => {
   const signature = channelSignatures[chatId];
 
   console.log(`Checking signature for ${chatId}:`, signature);
+  console.log(`Message details:`, JSON.stringify(msg, null, 2));
 
   if (signature) {
     try {
-      if (msg.text) {
+      if (msg.text && !msg.text.includes(signature)) {
+        // Handle text messages
         const updatedText = `${msg.text}\n\n${signature}`;
         await bot.editMessageText(updatedText, {
           chat_id: chatId,
           message_id: messageId,
         });
         console.log(`Edited text message ${messageId} in ${chatId}`);
-      } else if (msg.caption && (msg.photo || msg.video || msg.document)) {
+      } else if (
+        msg.caption &&
+        (msg.photo || msg.video || msg.document) &&
+        !msg.caption.includes(signature)
+      ) {
+        // Handle media messages with captions
         const updatedCaption = `${msg.caption}\n\n${signature}`;
         await bot.editMessageCaption({
           chat_id: chatId,
@@ -111,7 +118,7 @@ bot.on("channel_post", async (msg) => {
         console.log(`Edited caption for message ${messageId} in ${chatId}`);
       } else {
         console.log(
-          `No text or caption to edit for message ${messageId} in ${chatId}`
+          `No text or caption to edit, or signature already present for message ${messageId} in ${chatId}`
         );
       }
     } catch (error) {
@@ -119,12 +126,33 @@ bot.on("channel_post", async (msg) => {
         `❌ Error editing message ${messageId} in ${chatId}:`,
         error.response?.body?.description || error.message
       );
-      await bot.sendMessage(
-        chatId,
-        `⚠️ Could not edit message to add signature: ${
-          error.response?.body?.description || error.message
-        }`
-      );
+      // Fallback: Delete and repost if editing fails
+      try {
+        await bot.deleteMessage(chatId, messageId);
+        console.log(`Deleted message ${messageId} in ${chatId}`);
+        if (msg.text) {
+          // Repost text message
+          await bot.sendMessage(chatId, `${msg.text}\n\n${signature}`);
+          console.log(`Reposted text message in ${chatId}`);
+        } else if (msg.caption && msg.photo) {
+          // Repost image with caption
+          await bot.sendPhoto(chatId, msg.photo[msg.photo.length - 1].file_id, {
+            caption: `${msg.caption}\n\n${signature}`,
+          });
+          console.log(`Reposted photo with caption in ${chatId}`);
+        }
+      } catch (fallbackError) {
+        console.error(
+          `❌ Error in fallback for message ${messageId} in ${chatId}:`,
+          fallbackError.response?.body?.description || fallbackError.message
+        );
+        await bot.sendMessage(
+          chatId,
+          `⚠️ Could not process message to add signature: ${
+            fallbackError.response?.body?.description || fallbackError.message
+          }`
+        );
+      }
     }
   } else {
     console.log(`No signature found for channel ${chatId}`);
