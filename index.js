@@ -80,6 +80,29 @@ bot.on("message", (msg) => {
     delete awaitingChannelId[userId]; // Cleanup temporary storage
   }
 });
+// Listen for new posts in the channel
+bot.on("channel_post", async (msg) => {
+  const chatId = msg.chat.id;
+  const signature = channelSignatures[chatId];
+
+  console.log(`Checking signature for ${chatId}:`, signature);
+
+  if (signature && msg.text) {
+    try {
+      // Delete the original post (only possible if the bot is an admin)
+      await bot.deleteMessage(chatId, msg.message_id);
+
+      // Repost the message with the signature
+      const updatedText = `${msg.text} — ${signature}`;
+      await bot.sendMessage(chatId, updatedText);
+    } catch (error) {
+      console.error(
+        "❌ Error modifying message:",
+        error.response?.body || error.message
+      );
+    }
+  }
+});
 console.log("Stored Signatures:", channelSignatures);
 // Start Express server
 app.listen(3000, () => {
