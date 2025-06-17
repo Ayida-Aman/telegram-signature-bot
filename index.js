@@ -46,7 +46,7 @@ bot.onText(/\/set_signature (.+)/, (msg, match) => {
   const userId = msg.chat.id;
   const signature = match[1];
 
-  // Store signature temporarily until the user provides a channel ID
+  // Ask for the channel ID
   awaitingChannelId[userId] = signature;
 
   bot.sendMessage(
@@ -55,27 +55,32 @@ bot.onText(/\/set_signature (.+)/, (msg, match) => {
   );
 });
 
-// Automatically edit posts to add the signature
-bot.on("channel_post", async (msg) => {
-  const chatId = msg.chat.id;
-  const signature = channelSignatures[chatId];
+// Process Channel ID Response
+bot.on("message", (msg) => {
+  const userId = msg.chat.id;
 
-  console.log(`Checking signature for ${chatId}:`, signature);
+  if (awaitingChannelId[userId]) {
+    let channelId = msg.text.trim(); // User inputted channel ID
 
-  if (signature && msg.text) {
-    try {
-      // Delete the original post
-      await bot.deleteMessage(chatId, msg.message_id);
-
-      // Repost the message with the signature
-      const updatedText = `${msg.text} — ${signature}`;
-      await bot.sendMessage(chatId, updatedText);
-    } catch (error) {
-      console.error("Error modifying message:", error);
+    // Ensure correct format
+    if (!channelId.startsWith("-100")) {
+      channelId = `-100${channelId}`;
     }
+
+    const signature = awaitingChannelId[userId];
+
+    // Save the corrected channel ID with the signature
+    channelSignatures[channelId] = signature;
+    saveSignatures(); // Persist data
+
+    bot.sendMessage(
+      userId,
+      `✅ Signature "${signature}" has been set for channel ${channelId}.`
+    );
+    delete awaitingChannelId[userId]; // Cleanup temporary storage
   }
 });
-
+console.log("Stored Signatures:", channelSignatures);
 // Start Express server
 app.listen(3000, () => {
   console.log("Bot is running with webhooks...");
