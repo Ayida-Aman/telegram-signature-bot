@@ -29,13 +29,14 @@ loadSignatures();
 
 // Webhook route for Telegram updates
 app.post(`/webhook/${process.env.BOT_TOKEN}`, (req, res) => {
+  console.log("Incoming Update:", JSON.stringify(req.body, null, 2)); // Debugging log
   bot.processUpdate(req.body);
   res.sendStatus(200);
 });
 
-// // Set webhook when bot starts
-// const WEBHOOK_URL = `https://yourbot.onrender.com/webhook/${process.env.BOT_TOKEN}`;
-// bot.setWebHook(WEBHOOK_URL);
+// Set webhook when bot starts
+const WEBHOOK_URL = `https://telegram-signature-bot-1.onrender.com/webhook/${process.env.BOT_TOKEN}`;
+bot.setWebHook(WEBHOOK_URL);
 
 // Command to set a signature
 bot.onText(/\/set_signature (.+)/, (msg, match) => {
