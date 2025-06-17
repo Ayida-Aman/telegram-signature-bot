@@ -60,10 +60,16 @@ bot.on("message", (msg) => {
   const userId = msg.chat.id;
 
   if (awaitingChannelId[userId]) {
-    const channelId = msg.text; // User inputted channel ID
+    let channelId = msg.text; // User inputted channel ID
+
+    // Ensure the channel ID is correctly formatted
+    if (!channelId.startsWith("-100")) {
+      channelId = `-100${channelId}`;
+    }
+
     const signature = awaitingChannelId[userId];
 
-    // Save the signature for the specified channel
+    // Save the corrected channel ID with the signature
     channelSignatures[channelId] = signature;
     saveSignatures(); // Persist data
 
