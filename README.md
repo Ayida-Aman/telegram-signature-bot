@@ -1,6 +1,6 @@
 # Telegram Signature Bot 🚀
 
-Automatically adds your username to every post—because signatures matter!
+A Telegram bot that automatically appends a custom signature to text messages and media captions in a specified channel. If editing fails, it deletes and reposts the message with the signature.
 
 ## 📝 What This Bot Does
 
@@ -9,8 +9,8 @@ This bot does it for you! Just post, and your signature will magically appear. �
 
 ## ⚡ Features
 
-✅ Automatically appends a username to each post  
-✅ Works seamlessly in your Telegram channel  
+✅ Append signatures to text posts and media captions (e.g., images, videos).
+✅ Fallback to delete and repost if editing is not possible.
 ✅ Simple Node.js setup  
 ✅ Customizable username format
 
